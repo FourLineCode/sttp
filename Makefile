@@ -1,5 +1,5 @@
 main = cmd/main.go
-bin = sttp
+bin = bin
 
 all: clean
 	go run $(main)
@@ -10,5 +10,7 @@ build: clean
 run:
 	./$(bin)
 
+test: clean build run
+
 clean:
-	rm -f $(bin)
+	rm -rf $(bin)

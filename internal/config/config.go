@@ -1,13 +1,27 @@
 package config
 
+import "flag"
+
 type Config struct {
-	Addr string
-	Port string
+	Port int
 }
 
-func GetConfig() Config {
+type Flags struct {
+	Port int
+}
+
+func GetConfig(flags Flags) Config {
 	return Config{
-		Addr: "tcp",
-		Port: ":8080",
+		Port: flags.Port,
+	}
+}
+
+func GetFlags() Flags {
+	defaultPort := flag.Int("port", 6969, "local port to host server (default: 6969)")
+
+	flag.Parse()
+
+	return Flags{
+		Port: *defaultPort,
 	}
 }
