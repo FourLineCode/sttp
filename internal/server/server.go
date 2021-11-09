@@ -11,7 +11,7 @@ import (
 func Run(port int) {
 	server, err := sttp.NewServer(port)
 	if err != nil {
-		logrus.Panic("Error initializing sttp server", err.Error())
+		logrus.Panic("Error initializing sttp server ", err.Error())
 	}
 
 	server.OnMessage(func(packet sttp.Message) {
@@ -20,6 +20,6 @@ func Run(port int) {
 	})
 
 	if err := server.Listen(); err != nil {
-		logrus.Panic("Error while listening for connections", err.Error())
+		logrus.Panic("Error while listening for connections ", err.Error())
 	}
 }

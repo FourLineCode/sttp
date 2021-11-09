@@ -41,7 +41,7 @@ func NewServer(port int) (Sttp, error) {
 	s := &sttp{
 		port:               portString,
 		logger:             logrus.New(),
-		maxBufferSize:      1024,
+		maxBufferSize:      64 * 1024,
 		connectionDeadline: time.Second * 30,
 		onMessageHandlers:  make([]MessageHandler, 0),
 	}
@@ -56,7 +56,7 @@ func (s *sttp) Listen() error {
 	}
 
 	defer listener.Close()
-	s.logger.Infof("\nSttp server running on port %v\n", s.port)
+	s.logger.Info("Sttp server running on port ", s.port)
 	s.logger.Info("Listening for connections ...")
 
 	for {
@@ -67,7 +67,7 @@ func (s *sttp) Listen() error {
 			continue
 		}
 
-		s.logger.Infof("Connection extablished: %v\n", conn.RemoteAddr().String())
+		s.logger.Info("Connection extablished: ", conn.RemoteAddr().String())
 
 		go s.handle(conn)
 	}
@@ -78,7 +78,7 @@ func (s *sttp) handle(conn Conn) {
 	conn.SetDeadline(time.Now().Add(s.connectionDeadline))
 
 	for {
-		bytes, _, err := bufio.NewReader(conn).ReadLine()
+		data, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
 			s.logger.Error("Error while reading from connection ", err.Error())
 			return
@@ -87,7 +87,7 @@ func (s *sttp) handle(conn Conn) {
 		conn.SetDeadline(time.Now().Add(s.connectionDeadline))
 
 		packet := Message{
-			Body:       strings.TrimSpace(string(bytes)),
+			Body:       strings.TrimSpace(data),
 			LocalAddr:  conn.LocalAddr(),
 			RemoteAddr: conn.RemoteAddr(),
 			Time:       time.Now(),
