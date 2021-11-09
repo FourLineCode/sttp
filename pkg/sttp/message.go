@@ -2,8 +2,8 @@ package sttp
 
 import "time"
 
-type Packet struct {
-	Text       string
+type Message struct {
+	Body       string
 	LocalAddr  Addr
 	RemoteAddr Addr
 	Time       time.Time

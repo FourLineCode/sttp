@@ -11,7 +11,7 @@ import (
 
 type Conn net.Conn
 type Addr net.Addr
-type Handler func(packet Packet)
+type MessageHandler func(packet Message)
 
 const (
 	MaxDeadline = time.Hour
@@ -21,7 +21,7 @@ type Sttp interface {
 	Listen() error
 	SetBufferSize(size int)
 	SetDeadline(deadline time.Duration)
-	OnMessage(handler Handler)
+	OnMessage(handler MessageHandler)
 }
 
 type sttp struct {
@@ -29,7 +29,7 @@ type sttp struct {
 	logger             *logrus.Logger
 	maxBufferSize      int
 	connectionDeadline time.Duration
-	onMessageHandlers  []Handler
+	onMessageHandlers  []MessageHandler
 }
 
 func NewServer(port int) (Sttp, error) {
@@ -43,7 +43,7 @@ func NewServer(port int) (Sttp, error) {
 		logger:             logrus.New(),
 		maxBufferSize:      1024,
 		connectionDeadline: time.Second * 30,
-		onMessageHandlers:  make([]Handler, 0),
+		onMessageHandlers:  make([]MessageHandler, 0),
 	}
 
 	return s, nil
@@ -86,8 +86,8 @@ func (s *sttp) handle(conn Conn) {
 
 		conn.SetDeadline(time.Now().Add(s.connectionDeadline))
 
-		packet := Packet{
-			Text:       strings.TrimSpace(string(bytes)),
+		packet := Message{
+			Body:       strings.TrimSpace(string(bytes)),
 			LocalAddr:  conn.LocalAddr(),
 			RemoteAddr: conn.RemoteAddr(),
 			Time:       time.Now(),
@@ -107,6 +107,6 @@ func (s *sttp) SetDeadline(deadline time.Duration) {
 	s.connectionDeadline = deadline
 }
 
-func (s *sttp) OnMessage(handler Handler) {
+func (s *sttp) OnMessage(handler MessageHandler) {
 	s.onMessageHandlers = append(s.onMessageHandlers, handler)
 }

@@ -6,9 +6,7 @@ import (
 )
 
 func main() {
-	f := config.GetFlags()
-
-	c := config.GetConfig(f)
+	c := config.GetConfig()
 
 	server.Run(c.Port)
 }

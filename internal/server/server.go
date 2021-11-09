@@ -14,9 +14,9 @@ func Run(port int) {
 		logrus.Panic("Error initializing sttp server", err.Error())
 	}
 
-	server.OnMessage(func(packet sttp.Packet) {
+	server.OnMessage(func(packet sttp.Message) {
 		fmt.Printf("%v | Recieved from %v\n", packet.Time.Local().Format(time.RFC822), packet.RemoteAddr.String())
-		fmt.Printf("Message: %v\n", packet.Text)
+		fmt.Printf("Message: %v\n", packet.Body)
 	})
 
 	if err := server.Listen(); err != nil {

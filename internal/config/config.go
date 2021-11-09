@@ -6,22 +6,24 @@ type Config struct {
 	Port int
 }
 
-type Flags struct {
-	Port int
+type flags struct {
+	port int
 }
 
-func GetConfig(flags Flags) Config {
+func GetConfig() Config {
+	f := getFlags()
+
 	return Config{
-		Port: flags.Port,
+		Port: f.port,
 	}
 }
 
-func GetFlags() Flags {
+func getFlags() flags {
 	defaultPort := flag.Int("port", 6969, "local port to host server (default: 6969)")
 
 	flag.Parse()
 
-	return Flags{
-		Port: *defaultPort,
+	return flags{
+		port: *defaultPort,
 	}
 }
