@@ -11,7 +11,7 @@ func Run(port uint16) {
 	server := sttp.NewServer(port)
 
 	server.OnMessage(func(packet sttp.Message) {
-		fmt.Printf("%v> %v\n", packet.RemoteAddr.String(), packet.Body)
+		fmt.Printf("[%v] %v:%v> %v", packet.Time.Format("02-01-2006 15:04"), packet.Host, packet.Port, packet.Body)
 	})
 
 	if err := server.Listen(); err != nil {

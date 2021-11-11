@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/FourLineCode/sttp/pkg/client"
+	"github.com/FourLineCode/sttp/pkg/protocol"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,12 +19,14 @@ var (
 type chatClient struct {
 	logger *logrus.Logger
 	client client.Client
+	host   protocol.Url
 }
 
-func StartClient(r io.Reader) {
+func StartClient(r io.Reader, url protocol.Url) {
 	client := chatClient{
 		logger: logrus.New(),
 		client: client.NewClient(),
+		host:   url,
 	}
 
 	err := client.readLoop(r)
@@ -49,7 +52,21 @@ func (c chatClient) readLoop(r io.Reader) error {
 		}
 
 		message := strings.Join(command[1:], " ")
-		c.client.SendMessage(uint16(port), message)
+		url := protocol.Url{
+			// TODO: parse host from scanned message
+			Host: "127.0.0.1",
+			Port: uint16(port),
+		}
+		packet := protocol.Packet{
+			Body: message,
+			Host: c.host.Host,
+			Port: c.host.Port,
+		}
+
+		if err := c.client.SendMessage(url, packet); err != nil {
+			c.logger.Error("Couldn't send message ", err.Error())
+			continue
+		}
 	}
 }
 

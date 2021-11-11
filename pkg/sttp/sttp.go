@@ -4,14 +4,16 @@ import (
 	"bufio"
 	"io"
 	"net"
-	"strings"
 	"time"
 
+	"github.com/FourLineCode/sttp/pkg/protocol"
 	"github.com/sirupsen/logrus"
 )
 
-type Conn net.Conn
-type Addr net.Addr
+type Conn protocol.Conn
+type Addr protocol.Addr
+type Message protocol.Packet
+type Url protocol.Url
 type MessageHandler func(packet Message)
 
 type Sttp interface {
@@ -21,7 +23,7 @@ type Sttp interface {
 }
 
 type sttp struct {
-	port               string
+	port               uint16
 	logger             *logrus.Logger
 	connectionDeadline time.Duration
 	onMessageHandlers  []MessageHandler
@@ -29,7 +31,7 @@ type sttp struct {
 
 func NewServer(port uint16) Sttp {
 	s := &sttp{
-		port:               TransformPort(port),
+		port:               port,
 		logger:             logrus.New(),
 		connectionDeadline: DefaultConnectionDeadline,
 		onMessageHandlers:  make([]MessageHandler, 0),
@@ -39,7 +41,7 @@ func NewServer(port uint16) Sttp {
 }
 
 func (s *sttp) Listen() error {
-	listener, err := net.Listen("tcp", s.port)
+	listener, err := net.Listen("tcp", TransformPort(s.port))
 	if err != nil {
 		return err
 	}
@@ -77,15 +79,13 @@ func (s *sttp) handle(conn Conn) {
 
 		conn.SetDeadline(time.Now().Add(s.connectionDeadline))
 
-		packet := Message{
-			Body:       strings.TrimSpace(data),
-			LocalAddr:  conn.LocalAddr(),
-			RemoteAddr: conn.RemoteAddr(),
-			Time:       time.Now(),
+		packet, err := protocol.Unmarshal(data)
+		if err != nil {
+			s.logger.Error("Recieved invalid message ", err.Error())
 		}
 
 		for _, handler := range s.onMessageHandlers {
-			go handler(packet)
+			go handler(Message(packet))
 		}
 	}
 }
