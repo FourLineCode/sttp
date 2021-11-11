@@ -80,7 +80,7 @@ func Unmarshal(s string) (Packet, error) {
 		Port:       uint16(port),
 		LocalAddr:  local,
 		RemoteAddr: remote,
-		Body:       strings.Join(parts[5:], ";"),
+		Body:       strings.TrimSpace(strings.Join(parts[5:], ";")),
 		Time:       time,
 	}
 
