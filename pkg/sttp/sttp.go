@@ -2,6 +2,7 @@ package sttp
 
 import (
 	"bufio"
+	"io"
 	"net"
 	"strings"
 	"time"
@@ -13,40 +14,28 @@ type Conn net.Conn
 type Addr net.Addr
 type MessageHandler func(packet Message)
 
-const (
-	MaxDeadline = time.Hour
-)
-
 type Sttp interface {
 	Listen() error
-	SetBufferSize(size int)
-	SetDeadline(deadline time.Duration)
-	OnMessage(handler MessageHandler)
+	SetDeadline(time.Duration)
+	OnMessage(MessageHandler)
 }
 
 type sttp struct {
 	port               string
 	logger             *logrus.Logger
-	maxBufferSize      int
 	connectionDeadline time.Duration
 	onMessageHandlers  []MessageHandler
 }
 
-func NewServer(port int) (Sttp, error) {
-	portString, err := transformPort(port)
-	if err != nil {
-		return nil, err
-	}
-
+func NewServer(port uint16) Sttp {
 	s := &sttp{
-		port:               portString,
+		port:               TransformPort(port),
 		logger:             logrus.New(),
-		maxBufferSize:      64 * 1024,
-		connectionDeadline: time.Second * 30,
+		connectionDeadline: DefaultConnectionDeadline,
 		onMessageHandlers:  make([]MessageHandler, 0),
 	}
 
-	return s, nil
+	return s
 }
 
 func (s *sttp) Listen() error {
@@ -67,8 +56,6 @@ func (s *sttp) Listen() error {
 			continue
 		}
 
-		s.logger.Info("Connection extablished: ", conn.RemoteAddr().String())
-
 		go s.handle(conn)
 	}
 }
@@ -80,7 +67,11 @@ func (s *sttp) handle(conn Conn) {
 	for {
 		data, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
-			s.logger.Error("Error while reading from connection ", err.Error())
+			if err == io.EOF {
+				conn.Close()
+			} else {
+				s.logger.Error("Error while reading from connection ", err.Error())
+			}
 			return
 		}
 
@@ -97,10 +88,6 @@ func (s *sttp) handle(conn Conn) {
 			go handler(packet)
 		}
 	}
-}
-
-func (s *sttp) SetBufferSize(size int) {
-	s.maxBufferSize = size
 }
 
 func (s *sttp) SetDeadline(deadline time.Duration) {

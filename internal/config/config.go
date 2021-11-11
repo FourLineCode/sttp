@@ -1,13 +1,17 @@
 package config
 
-import "flag"
+import (
+	"flag"
+
+	"github.com/FourLineCode/sttp/pkg/sttp"
+)
 
 type Config struct {
-	Port int
+	Port uint16
 }
 
 type flags struct {
-	port int
+	port uint16
 }
 
 func GetConfig() Config {
@@ -19,11 +23,11 @@ func GetConfig() Config {
 }
 
 func getFlags() flags {
-	defaultPort := flag.Int("port", 6969, "local port to host server (default: 6969)")
+	defaultPort := flag.Uint64("port", sttp.DefaultPort, "local port to host server (default: 6969)")
 
 	flag.Parse()
 
 	return flags{
-		port: *defaultPort,
+		port: uint16(*defaultPort),
 	}
 }
