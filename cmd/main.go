@@ -4,10 +4,13 @@ import (
 	"github.com/FourLineCode/sttp/internal/chat"
 	"github.com/FourLineCode/sttp/internal/config"
 	"github.com/FourLineCode/sttp/internal/server"
+	"github.com/FourLineCode/sttp/pkg/logger"
 	"github.com/FourLineCode/sttp/pkg/protocol"
 )
 
 func main() {
+	logger.Init()
+
 	c := config.GetConfig()
 	u := protocol.Url{
 		Host: "127.0.0.1",
