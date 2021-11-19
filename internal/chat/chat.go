@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/FourLineCode/sttp/pkg/client"
+	"github.com/FourLineCode/sttp/pkg/logger"
 	"github.com/FourLineCode/sttp/pkg/protocol"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -17,21 +17,19 @@ var (
 )
 
 type chatClient struct {
-	logger *logrus.Logger
 	client client.Client
 	host   protocol.Url
 }
 
 func StartClient(r io.Reader, url protocol.Url) {
 	client := chatClient{
-		logger: logrus.New(),
 		client: client.NewClient(),
 		host:   url,
 	}
 
 	err := client.readLoop(r)
 	if err != nil {
-		client.logger.Panic("Error while running chat client ", err.Error())
+		logger.Panic("Error while running chat client %v", err.Error())
 	}
 }
 
@@ -47,7 +45,7 @@ func (c chatClient) readLoop(r io.Reader) error {
 		port, err := strconv.Atoi(command[0])
 		if err != nil || len(command) < 2 {
 			// TODO: change this after protocol implementation
-			c.logger.Warning("Invalid message (usage: <port> <message>)")
+			logger.Warn("Invalid message (usage: <port> <message>)")
 			continue
 		}
 
@@ -64,7 +62,7 @@ func (c chatClient) readLoop(r io.Reader) error {
 		}
 
 		if err := c.client.SendMessage(url, packet); err != nil {
-			c.logger.Error("Couldn't send message ", err.Error())
+			logger.Error("Couldn't send message %v", err.Error())
 			continue
 		}
 	}

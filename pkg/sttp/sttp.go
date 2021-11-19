@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/FourLineCode/sttp/pkg/logger"
 	"github.com/FourLineCode/sttp/pkg/protocol"
-	"github.com/sirupsen/logrus"
 )
 
 type Conn protocol.Conn
@@ -24,7 +24,6 @@ type Sttp interface {
 
 type sttp struct {
 	port               uint16
-	logger             *logrus.Logger
 	connectionDeadline time.Duration
 	onMessageHandlers  []MessageHandler
 }
@@ -32,7 +31,6 @@ type sttp struct {
 func NewServer(port uint16) Sttp {
 	s := &sttp{
 		port:               port,
-		logger:             logrus.New(),
 		connectionDeadline: DefaultConnectionDeadline,
 		onMessageHandlers:  make([]MessageHandler, 0),
 	}
@@ -47,13 +45,13 @@ func (s *sttp) Listen() error {
 	}
 
 	defer listener.Close()
-	s.logger.Info("Sttp server running on port ", s.port)
-	s.logger.Info("Listening for connections ...")
+	logger.Info("Sttp server running on port %v", s.port)
+	logger.Info("Listening for connections ...")
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			s.logger.Error("Error establishing connection ", err.Error())
+			logger.Error("Error establishing connection %v", err.Error())
 			conn.Close()
 			continue
 		}
@@ -72,7 +70,7 @@ func (s *sttp) handle(conn Conn) {
 			if err == io.EOF {
 				conn.Close()
 			} else {
-				s.logger.Error("Error while reading from connection ", err.Error())
+				logger.Error("Error while reading from connection %v", err.Error())
 			}
 			return
 		}
@@ -81,7 +79,7 @@ func (s *sttp) handle(conn Conn) {
 
 		packet, err := protocol.Unmarshal(data)
 		if err != nil {
-			s.logger.Error("Recieved invalid message ", err.Error())
+			logger.Error("Recieved invalid message %v", err.Error())
 		}
 
 		for _, handler := range s.onMessageHandlers {

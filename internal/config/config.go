@@ -4,8 +4,8 @@ import (
 	"flag"
 	"net"
 
+	"github.com/FourLineCode/sttp/pkg/logger"
 	"github.com/FourLineCode/sttp/pkg/sttp"
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -34,7 +34,9 @@ retry:
 		goto retry
 	}
 	ln.Close()
-	logrus.Warnf("Couldn't connect to default port. Falling back to %v", port)
+	if port != sttp.DefaultPort {
+		logger.Warn("Couldn't connect to default port. Falling back to %v", port)
+	}
 
 	defaultPort := flag.Uint64("port", uint64(port), "local port to host server (default: 6969)")
 
