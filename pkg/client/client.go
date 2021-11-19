@@ -19,7 +19,7 @@ func NewClient() Client {
 }
 
 func (c client) SendMessage(url protocol.Url, packet protocol.Packet) error {
-	conn, err := net.Dial("tcp", sttp.TransformPort(url.Port))
+	conn, err := net.DialTimeout("tcp", sttp.TransformPort(url.Port), time.Second)
 	if err != nil {
 		return err
 	}
