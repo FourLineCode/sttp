@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/FourLineCode/sttp/pkg/client"
@@ -19,12 +18,14 @@ var (
 type chatClient struct {
 	client client.Client
 	host   protocol.Url
+	state  *chatState
 }
 
 func StartClient(r io.Reader, url protocol.Url) {
 	client := chatClient{
 		client: client.NewClient(),
 		host:   url,
+		state:  &chatState{},
 	}
 
 	err := client.readLoop(r)
@@ -33,37 +34,48 @@ func StartClient(r io.Reader, url protocol.Url) {
 	}
 }
 
-func (c chatClient) readLoop(r io.Reader) error {
+func (c *chatClient) readLoop(r io.Reader) error {
 	for {
 		s, err := readString(r)
 		if err != nil {
 			return err
 		}
 
-		command := strings.Split(s, " ")
+		if strings.HasPrefix(s, "/") {
+			cmd, err := parseCommand(s)
+			if err != nil {
+				logger.Error("Error parsing command %v", err.Error())
+				continue
+			}
 
-		port, err := strconv.Atoi(command[0])
-		if err != nil || len(command) < 2 {
-			// TODO: change this after protocol implementation
-			logger.Warn("Invalid message (usage: <port> <message>)")
-			continue
-		}
+			if err := execCommand(cmd, c); err != nil {
+				logger.Error("Error executing command \"%v\"", cmd.Type)
+				logger.Error(err.Error())
+				continue
+			}
+		} else {
+			if strings.TrimSpace(s) == "" {
+				continue
+			}
 
-		message := strings.Join(command[1:], " ")
-		url := protocol.Url{
-			// TODO: parse host from scanned message
-			Host: "127.0.0.1",
-			Port: uint16(port),
-		}
-		packet := protocol.Packet{
-			Body: message,
-			Host: c.host.Host,
-			Port: c.host.Port,
-		}
+			if !c.state.initialized {
+				logger.Warn("Cannot send message without joining room")
+				logger.Info("Use command \"/join <url>\" to join a room")
+				logger.Info("Or use command \"/msg <url> <body>\" to directly send a message")
+				continue
+			}
 
-		if err := c.client.SendMessage(url, packet); err != nil {
-			logger.Error("Couldn't send message %v", err.Error())
-			continue
+			// TODO: add username here later
+			packet := protocol.Packet{
+				Body: s,
+				Host: c.host.Host,
+				Port: c.host.Port,
+			}
+
+			if err := c.client.SendMessage(c.state.roomUrl, packet); err != nil {
+				logger.Error("Couldn't send message %v", err.Error())
+				continue
+			}
 		}
 	}
 }
